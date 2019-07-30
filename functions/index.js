@@ -1,27 +1,13 @@
 const functions = require('firebase-functions');
 
-// // The Firebase Admin SDK to access the Firebase Realtime Database.
+// The Firebase Admin SDK to access the Firebase Realtime Database.
 const admin = require('firebase-admin');
 admin.initializeApp();
 
 const db = admin.firestore();
 
-// exports.entriesTitan = functions.firestore
-//   .document('entries/{entrieId}')
-//   .onWrite((change, context) => {
+const entry = require('./src/entry/entry');
 
-//     console.log('CAMBIAAaaa', change);
-//     console.log('CONTEXTaaaa', context);
-//     db.collection('failures')
-//       .add({
-//         deviceId: 'abcd1234',
-//         isConfirmed: false,
-//         location: new admin.firestore.GeoPoint(-34, 89)
-//       })
-//       .then(res => console.log('RES', res))
-//       .catch(err => console.error('ERR', err));
-
-//   });
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -48,23 +34,9 @@ app.delete('/entry', (req, res) => {
   res.send({ success: `Success => ssid: ${ssid}, deviceId: ${deviceId}` });
 })
 
-app.post('/entry', (req, res) => {
-  // TODO: add validation for request body
-  const { ssid, deviceId, timestamp, location } = req.body;
+app.post('/entry', (req, res) => entry.createNewEntry(req, res, db));
 
-  db.collection('entries')
-    .add({
-      deviceId: 'abcd1234',
-      isConfirmed: false,
-      location: new admin.firestore.GeoPoint(-34, 89)
-    })
-    .then(res => console.log('RES', res))
-    .catch(err => console.error('ERR', err));
-
-  res.send({ success: `SUCCESS adding device: ${deviceId} to ssid: ${ssid}` });
-});
-
-app.listen(5000, () => console.log('server iniciado '))
+// app.listen(5000, () => console.log('server iniciado '))
 
 // Expose Express API as a single Cloud Function:
 exports.devices = functions.https.onRequest(app);
