@@ -41,10 +41,15 @@ app.use(cors({ origin: true }));
 // app.use(myMiddleware);
 
 // build multiple CRUD interfaces:
-app.get('/entry', (req, res) => res.send('HOLAAAAAAA'));
+app.get('/entry', (req, res) => res.send('All working here 🤙'));
+
+app.delete('/entry', (req, res) => {
+  const { ssid, deviceId } = req.query;
+  res.send({ success: `Success => ssid: ${ssid}, deviceId: ${deviceId}` });
+})
 
 app.post('/entry', (req, res) => {
-  // TODO add validation for request body
+  // TODO: add validation for request body
   const { ssid, deviceId, timestamp, location } = req.body;
 
   db.collection('entries')
@@ -56,13 +61,10 @@ app.post('/entry', (req, res) => {
     .then(res => console.log('RES', res))
     .catch(err => console.error('ERR', err));
 
-  res.send({
-    ssid,
-    deviceId,
-    timestamp,
-    location
-  });
+  res.send({ success: `SUCCESS adding device: ${deviceId} to ssid: ${ssid}` });
 });
+
+app.listen(5000, () => console.log('server iniciado '))
 
 // Expose Express API as a single Cloud Function:
 exports.devices = functions.https.onRequest(app);
