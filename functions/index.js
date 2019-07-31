@@ -36,7 +36,7 @@ app.delete('/entry', (req, res) => {
 
 app.post('/entry', (req, res) => entry.createNewEntry(req, res, db));
 
-// app.listen(5000, () => console.log('server iniciado '))
+app.listen(5000, () => console.log('server iniciado '))
 
 // Expose Express API as a single Cloud Function:
 exports.devices = functions.https.onRequest(app);
