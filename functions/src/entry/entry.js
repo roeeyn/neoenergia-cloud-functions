@@ -4,9 +4,6 @@ const { sendSuccess, sendError } = require('../../lib/response');
 
 const addLocationToSSIDDevice = ({ ssidEntryId, db, locationString }) => {
 
-  console.log('location');
-
-
   const { lat, lng } = parseStringLocation(locationString);
   const firestoreLocation = new admin.firestore.GeoPoint(Number(lat), Number(lng));
 
@@ -14,13 +11,10 @@ const addLocationToSSIDDevice = ({ ssidEntryId, db, locationString }) => {
     .doc(ssidEntryId)
     .collection('locations')
     .add({ location: firestoreLocation });
+
 };
 
 const addTimeStampToSSIDDevice = ({ ssidEntryId, deviceId, db }) => {
-
-console.log('timestamp');
-
-
   return db
     .collection('entries')
     .doc(ssidEntryId)
@@ -29,7 +23,6 @@ console.log('timestamp');
       deviceId,
       timestamp: admin.firestore.Timestamp.fromDate(new Date())
     });
-
 };
 
 const addEntryToNewSSID = ({ db, deviceId, location: locationString, ssid }) => {
