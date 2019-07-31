@@ -14,32 +14,35 @@ const foundDeviceIdKey = ({ db, ssidKey, deviceId }) => {
     .get()
 };
 
+const deleteDeviceFromSSIDList = ({ db, ssidKey, deviceKey }) => {
+  return db.collection("entries")
+    .doc(ssidKey)
+    .collection('devices')
+    .doc(deviceKey)
+    .delete();
+};
+
 const deleteDeviceFromSSID = (req, res, db) => {
   const { ssid, deviceId } = req.query;
 
   return foundSSIDKey({ db, ssid })
-    .then(querySnapshot => {
-      if(querySnapshot.empty){
-        sendSuccess(res, 'NO SSID Found')
-      } else {
+    .then(querySnapshot => querySnapshot.empty
+      ? Promise.reject('NO SSID Found')
+      : Promise.all([
+        foundDeviceIdKey({ db, ssidKey: querySnapshot.docs[0].id, deviceId }),
+        querySnapshot.docs[0].id
+      ]))
+    .then(results => {
+      const querySnapshot = results[0];
+      const ssidKey = results[1];
 
-        foundDeviceIdKey({ db, ssidKey: querySnapshot.docs[0].id, deviceId })
-          .then(qSnapshot => {
-          if(qSnapshot.empty){
-            sendSuccess(res, 'NO DEvice Found')
-          } else {
-            console.log(qSnapshot.docs[0].id)
-            sendSuccess(res, 'Should delelete device')
-          }
-        })
-      }
+      return querySnapshot.empty
+        ? Promise.reject('NO DEVICE Found')
+        : deleteDeviceFromSSIDList({ db, ssidKey, deviceKey: querySnapshot.docs[0].id });
+
     })
-
-/*   db.collection("entries").doc("DC").delete().then(function() {
-      console.log("Document successfully deleted!");
-  }).catch(function(error) {
-      console.error("Error removing document: ", error);
-  }); */
+    .then(() => sendSuccess(res, 'Deleted succesfully'))
+    .catch(err => sendError(res, err));
 
 };
 
