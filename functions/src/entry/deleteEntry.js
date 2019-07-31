@@ -27,7 +27,7 @@ const deleteDeviceFromSSID = (req, res, db) => {
 
   return foundSSIDKey({ db, ssid })
     .then(querySnapshot => querySnapshot.empty
-      ? Promise.reject('NO SSID Found')
+      ? Promise.reject(new Error('NO SSID Found'))
       : Promise.all([
         foundDeviceIdKey({ db, ssidKey: querySnapshot.docs[0].id, deviceId }),
         querySnapshot.docs[0].id
@@ -37,7 +37,7 @@ const deleteDeviceFromSSID = (req, res, db) => {
       const ssidKey = results[1];
 
       return querySnapshot.empty
-        ? Promise.reject('NO DEVICE Found')
+        ? Promise.reject(new Error('NO DEVICE Found'))
         : deleteDeviceFromSSIDList({ db, ssidKey, deviceKey: querySnapshot.docs[0].id });
 
     })
