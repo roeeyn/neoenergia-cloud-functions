@@ -7,6 +7,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 const entry = require('./src/entry/entry');
+const { deleteDeviceFromSSID } = require('./src/entry/deleteEntry');
 
 const express = require('express');
 const cors = require('cors');
@@ -29,10 +30,7 @@ app.use(cors({ origin: true }));
 // build multiple CRUD interfaces:
 app.get('/entry', (req, res) => res.send('All working here 🤙'));
 
-app.delete('/entry', (req, res) => {
-  const { ssid, deviceId } = req.query;
-  res.send({ success: `Success => ssid: ${ssid}, deviceId: ${deviceId}` });
-})
+app.delete('/entry', (req, res) => deleteDeviceFromSSID(req, res, db));
 
 app.post('/entry', (req, res) => entry.createNewEntry(req, res, db));
 
