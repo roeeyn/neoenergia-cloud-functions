@@ -36,34 +36,32 @@ const addEntryToNewSSID = ({ db, deviceId, location: locationString, ssid }) => 
     .then(() => Promise.resolve(`SUCCESS adding NEW device: ${deviceId} to ssid: ${ssid}`));
 };
 
+const addNewDeviceToExistingSSID = ({ ssidEntryId, db, deviceId, locationString }) => {
+  return addTimeStampToSSIDDevice({ ssidEntryId, deviceId, db })
+    .then(() => addLocationToSSIDDevice({ ssidEntryId, db, locationString }))
+    .then(() => Promise.resolve(`SUCCESS adding NEW device: ${deviceId} to EXISTING ssid: ${ssidEntryId}`))
+};
 
+const updateDeviceInExistingSSID = ({ ssidEntryId, db, deviceId, deviceKey }) => {
+  return db.collection('entries')
+    .doc(ssidEntryId)
+    .collection('devices')
+    .doc(deviceKey)
+    .set({
+      timestamp: admin.firestore.Timestamp.fromDate(new Date()),
+      deviceId
+    }).then(() => Promise.resolve(`SUCCESS adding EXISTING device: ${deviceId} to EXISTING ssid: ${ssidEntryId}`))
+};
 
 const addEntryToExistingSSID = ({ existingSSIDId: ssidEntryId, db, deviceId, location: locationString }) => {
-
   return db.collection('entries')
     .doc(ssidEntryId)
     .collection('devices')
     .where('deviceId', '==', deviceId)
     .get()
-    .then(querySnapshot => {
-
-      return querySnapshot.empty
-        ? addTimeStampToSSIDDevice({ ssidEntryId, deviceId, db })
-          .then(() => addLocationToSSIDDevice({ ssidEntryId, db, locationString }))
-          .then(() => Promise.resolve(`SUCCESS adding NEW device: ${deviceId} to EXISTING ssid: ${ssidEntryId}`))
-        : db.collection('entries')
-          .doc(ssidEntryId)
-          .collection('devices')
-          .doc(querySnapshot.docs[0].id)
-          .set({
-            timestamp: admin.firestore.Timestamp.fromDate(new Date()),
-            deviceId
-          }).then(() => Promise.resolve(`SUCCESS adding EXISTING device: ${deviceId} to EXISTING ssid: ${ssidEntryId}`))
-    })
-
-  return addTimeStampToSSIDDevice({ ssidEntryId, deviceId, db })
-    .then(() => addLocationToSSIDDevice({ ssidEntryId, db, locationString }))
-    .then(() => Promise.resolve(`SUCCESS adding EXISTING device: ${deviceId} to ssid: ${ssidEntryId}`))
+    .then(querySnapshot => querySnapshot.empty
+      ? addNewDeviceToExistingSSID({ ssidEntryId, db, deviceId, locationString })
+      : updateDeviceInExistingSSID({ ssidEntryId, db, deviceId, deviceKey: querySnapshot.docs[0].id }));
 };
 
 const createNewEntry = (req, res, db) => {
