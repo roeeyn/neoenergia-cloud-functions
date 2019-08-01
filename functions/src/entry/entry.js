@@ -36,7 +36,31 @@ const addEntryToNewSSID = ({ db, deviceId, location: locationString, ssid }) => 
     .then(() => Promise.resolve(`SUCCESS adding NEW device: ${deviceId} to ssid: ${ssid}`));
 };
 
+
+
 const addEntryToExistingSSID = ({ existingSSIDId: ssidEntryId, db, deviceId, location: locationString }) => {
+
+  return db.collection('entries')
+    .doc(ssidEntryId)
+    .collection('devices')
+    .where('deviceId', '==', deviceId)
+    .get()
+    .then(querySnapshot => {
+
+      return querySnapshot.empty
+        ? addTimeStampToSSIDDevice({ ssidEntryId, deviceId, db })
+          .then(() => addLocationToSSIDDevice({ ssidEntryId, db, locationString }))
+          .then(() => Promise.resolve(`SUCCESS adding NEW device: ${deviceId} to EXISTING ssid: ${ssidEntryId}`))
+        : db.collection('entries')
+          .doc(ssidEntryId)
+          .collection('devices')
+          .doc(querySnapshot.docs[0].id)
+          .set({
+            timestamp: admin.firestore.Timestamp.fromDate(new Date()),
+            deviceId
+          }).then(() => Promise.resolve(`SUCCESS adding EXISTING device: ${deviceId} to EXISTING ssid: ${ssidEntryId}`))
+    })
+
   return addTimeStampToSSIDDevice({ ssidEntryId, deviceId, db })
     .then(() => addLocationToSSIDDevice({ ssidEntryId, db, locationString }))
     .then(() => Promise.resolve(`SUCCESS adding EXISTING device: ${deviceId} to ssid: ${ssidEntryId}`))
