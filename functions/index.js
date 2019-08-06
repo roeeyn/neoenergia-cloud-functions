@@ -8,6 +8,8 @@ const db = admin.firestore();
 
 const entry = require('./src/entry/entry');
 const { deleteDeviceFromSSID } = require('./src/entry/deleteEntry');
+// const { cleanDbFails } = require('./src/cleaning/clean-fails-db');
+const { detectingFails } = require('./src/detecting/detecting-fails');
 
 const express = require('express');
 const cors = require('cors');
@@ -44,59 +46,24 @@ exports.devices = functions.https.onRequest(app);
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 // Function to detect a fail when a network has no more devices
-exports.detectFails = functions.firestore.document('entries/{entryId}/devices/{deviceId}').onWrite((change, context) => {    
-            
-    const document = change.after.exists ? change.after.data() : null;
-
-    var rootId = change.before.ref.path.split("/").slice(1, 2);
-
-    var docRef = db.collection('entries').doc(rootId[0]);
-
-    db.collection('entries/' + rootId[0] + '/locations').get().then((subCollectionSnapshot) => {
-
-        var location = "";
-    
-        subCollectionSnapshot.forEach((subDoc) => {
-            location = subDoc.data().location;
-        });
-
-        docRef.get().then(function(doc) {
-
-            if(document == null){
-                
-                db.collection('fails')
-                    .add({
-                        wiFiAutoId: rootId[0],
-                        location:  new admin.firestore.GeoPoint(location.latitude, location.longitude)
-                })
-                .then(response => console.log('Fail created', response))
-                .catch(err => console.error('ERR', err));        
-            }
-
-        }).catch(function(error) {
-            console.log("Error getting document:", error);
-        });
-    });
-
-    return true;
-
- });
+exports.detectFails = functions.firestore.document('entries/{entryId}/devices/{deviceId}')
+    .onWrite((change, context) => detectingFails(change, db, admin.firestore.GeoPoint));
 
  // Function to clean from Failed DB a network that is active with devices connected
-exports.cleanDbFails = functions.firestore.document('entries/{entryId}/devices/{deviceId}').onWrite((change, context) => { 
+/* xports.cleanDbFails = functions.firestore.document('entries/{entryId}/devices/{deviceId}').onWrite((change, context) => {
 
     var rootId = change.before.ref.path.split("/").slice(1, 2);
 
     db.collection('entries/' + rootId[0] + '/devices').get().then((subCollectionSnapshot) => {
-        
+
         var exist_devices = false;
-        
-        subCollectionSnapshot.forEach((subDoc) => {    
+
+        subCollectionSnapshot.forEach((subDoc) => {
             exist_devices = true;
         });
 
         if(exist_devices){
-        
+
             var fail_kill_query = db.collection('fails').where('wiFiAutoId','==', rootId[0]);
 
             fail_kill_query.get().then(function(querySnapshot) {
@@ -113,21 +80,21 @@ exports.cleanDbFails = functions.firestore.document('entries/{entryId}/devices/{
 });
 
 // Function to clean devices that are more than 3 minutes without communication
-function cleanDevices() { 
+function cleanDevices() {
 
     var entries = db.collection('entries');
 
     entries.get().then(function(querySnapshot) {
         querySnapshot.forEach(function(docEntries) {
-        
+
             db.collection('entries/' + docEntries.id + '/devices').get().then((subCollectionSnapshot) => {
 
-                subCollectionSnapshot.forEach((subDoc) => {   
+                subCollectionSnapshot.forEach((subDoc) => {
 
                     const today = new Date();
                     const endDate = subDoc.data().timestamp.toDate();
                     const minutes = parseInt(Math.abs(endDate.getTime() - today.getTime()) / (1000 * 60) % 60);
-                    
+
                     if(minutes > 1){
                         subDoc.ref.delete();
                     }
@@ -143,4 +110,4 @@ function cleanDevices() {
 // Function perform the function that clears devices that are more than 3 minutes without communication
 exports.scheduledcleanDevices = functions.pubsub.schedule('every 1 minutes').onRun((context) => {
     cleanDevices();
-});
+}); */
