@@ -10,6 +10,7 @@ const entry = require('./src/entry/entry');
 const { deleteDeviceFromSSID } = require('./src/entry/deleteEntry');
 const { cleanFailsDb } = require('./src/cleaning/clean-fails-db');
 const { detectingFails } = require('./src/detecting/detecting-fails');
+const { cleanOldDevices } = require('./src/cleaning/clean-devices-db');
 
 const express = require('express');
 const cors = require('cors');
@@ -53,35 +54,6 @@ exports.detectFails = functions.firestore.document('entries/{entryId}/devices/{d
 exports.cleanDbFails = functions.firestore.document('entries/{entryId}/devices/{deviceId}')
     .onWrite((change, context) => cleanFailsDb(change, db));
 
-// Function to clean devices that are more than 3 minutes without communication
-function cleanDevices() {
-
-    var entries = db.collection('entries');
-
-    entries.get().then(function(querySnapshot) {
-        querySnapshot.forEach(function(docEntries) {
-
-            db.collection('entries/' + docEntries.id + '/devices').get().then((subCollectionSnapshot) => {
-
-                subCollectionSnapshot.forEach((subDoc) => {
-
-                    const today = new Date();
-                    const endDate = subDoc.data().timestamp.toDate();
-                    const minutes = parseInt(Math.abs(endDate.getTime() - today.getTime()) / (1000 * 60) % 60);
-
-                    if(minutes > 1){
-                        subDoc.ref.delete();
-                    }
-
-                });
-            });
-        });
-    }).catch(err => {
-        console.log('Error deleting documents', err);
-    });
-}
-
 // Function perform the function that clears devices that are more than 3 minutes without communication
-exports.scheduledcleanDevices = functions.pubsub.schedule('every 1 minutes').onRun((context) => {
-    cleanDevices();
-}); */
+exports.scheduledcleanDevices = functions.pubsub.schedule('every 1 minutes')
+    .onRun(context => cleanOldDevices(db));
