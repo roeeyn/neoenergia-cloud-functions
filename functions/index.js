@@ -8,7 +8,7 @@ const db = admin.firestore();
 
 const entry = require('./src/entry/entry');
 const { deleteDeviceFromSSID } = require('./src/entry/deleteEntry');
-// const { cleanDbFails } = require('./src/cleaning/clean-fails-db');
+const { cleanFailsDb } = require('./src/cleaning/clean-fails-db');
 const { detectingFails } = require('./src/detecting/detecting-fails');
 
 const express = require('express');
@@ -50,34 +50,8 @@ exports.detectFails = functions.firestore.document('entries/{entryId}/devices/{d
     .onWrite((change, context) => detectingFails(change, db, admin.firestore.GeoPoint));
 
  // Function to clean from Failed DB a network that is active with devices connected
-/* xports.cleanDbFails = functions.firestore.document('entries/{entryId}/devices/{deviceId}').onWrite((change, context) => {
-
-    var rootId = change.before.ref.path.split("/").slice(1, 2);
-
-    db.collection('entries/' + rootId[0] + '/devices').get().then((subCollectionSnapshot) => {
-
-        var exist_devices = false;
-
-        subCollectionSnapshot.forEach((subDoc) => {
-            exist_devices = true;
-        });
-
-        if(exist_devices){
-
-            var fail_kill_query = db.collection('fails').where('wiFiAutoId','==', rootId[0]);
-
-            fail_kill_query.get().then(function(querySnapshot) {
-                querySnapshot.forEach(function(doc) {
-                    doc.ref.delete();
-                    console.log('Successs deleting documents');
-                });
-            }).catch(err => {
-                console.log('Error deleting documents', err);
-            });
-        }
-    });
-    return true;
-});
+exports.cleanDbFails = functions.firestore.document('entries/{entryId}/devices/{deviceId}')
+    .onWrite((change, context) => cleanFailsDb(change, db));
 
 // Function to clean devices that are more than 3 minutes without communication
 function cleanDevices() {
