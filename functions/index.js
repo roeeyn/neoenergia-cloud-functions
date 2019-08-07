@@ -42,10 +42,6 @@ app.post('/entry', (req, res) => entry.createNewEntry(req, res, db));
 // Expose Express API as a single Cloud Function:
 exports.devices = functions.https.onRequest(app);
 
-////////////////////////////////////////////////////////////////////////////////////////////
-// LEO /////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-
 // Function to detect a fail when a network has no more devices
 exports.detectFails = functions.firestore.document('entries/{entryId}/devices/{deviceId}')
     .onWrite((change, context) => detectingFails(change, db, admin.firestore.GeoPoint));
