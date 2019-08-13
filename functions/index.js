@@ -8,6 +8,9 @@ const db = admin.firestore();
 
 const entry = require('./src/entry/entry');
 const { deleteDeviceFromSSID } = require('./src/entry/deleteEntry');
+const { cleanFailsDb } = require('./src/cleaning/clean-fails-db');
+const { detectingFails } = require('./src/detecting/detecting-fails');
+const { cleanOldDevices } = require('./src/cleaning/clean-devices-db');
 
 const express = require('express');
 const cors = require('cors');
@@ -38,3 +41,15 @@ app.post('/entry', (req, res) => entry.createNewEntry(req, res, db));
 
 // Expose Express API as a single Cloud Function:
 exports.devices = functions.https.onRequest(app);
+
+// Function to detect a fail when a network has no more devices
+exports.detectFails = functions.firestore.document('entries/{entryId}/devices/{deviceId}')
+    .onWrite((change, context) => detectingFails(change, db, admin.firestore.GeoPoint));
+
+ // Function to clean from Failed DB a network that is active with devices connected
+exports.cleanDbFails = functions.firestore.document('entries/{entryId}/devices/{deviceId}')
+    .onWrite((change, context) => cleanFailsDb(change, db));
+
+// Function perform the function that clears devices that are more than 3 minutes without communication
+exports.scheduledcleanDevices = functions.pubsub.schedule('every 1 minutes')
+    .onRun(context => cleanOldDevices(db));
